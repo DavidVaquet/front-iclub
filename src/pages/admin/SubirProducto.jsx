@@ -1,6 +1,6 @@
-"use client"
-
-import { useState } from "react"
+import { useState, useEffect } from "react";
+import { getAllCategories } from "../../services/categorieService";
+import { addProductController } from "../../controllers/productController";
 import {
   Button,
   Input,
@@ -16,43 +16,64 @@ import {
 } from "@material-tailwind/react"
 
 export const SubirProducto = () => {
-  const [images, setImages] = useState([])
-  const [estado, setEstado] = useState("activo")
-  const [visible, setVisible] = useState(true)
+const [nombre, setNombre] = useState('');
+const [descripcion, setDescripcion] = useState('');
+const [precio, setPrecio] = useState('');
+const [images, setImages] = useState([]);
+const [marca, setMarca] = useState('');
+const [categorias, setCategorias] = useState([]);
+const [cantidad, setCantidad] = useState(0);
+const [estado, setEstado] = useState(true);
+const [visible, setVisible] = useState(true);
 
-  const handleFileChange = (e) => {
-    const files = e.target.files
-    if (!files || files.length === 0) return
+const handleFileChange = (e) => {
 
-    const newImages = Array.from(files).map((file) => ({
-      id: Date.now() + Math.random().toString(36).substr(2, 9),
-      file,
-      url: URL.createObjectURL(file),
-    }))
+  const files = e.target.file;
+  if (!files || files.length === 0) return;
 
-    setImages((prev) => [...prev, ...newImages])
-  }
+  const newImages = Array.from(files).map((file) => ({
+    id: Date.now + Math.random().toString(36).substr(2,9),
+    file,
+    url: URL.createObjectURL(file)
+  }));
 
-  const handleDrop = (e) => {
-    e.preventDefault()
-    const files = e.dataTransfer.files
-    if (!files || files.length === 0) return
+  setImages((prev) => [...prev, ...newImages]);
 
-    const newImages = Array.from(files).map((file) => ({
-      id: Date.now() + Math.random().toString(36).substr(2, 9),
-      file,
-      url: URL.createObjectURL(file),
-    }))
-
-    setImages((prev) => [...prev, ...newImages])
   }
 
   const removeImage = (id) => {
-    setImages((prev) => {
-      const filtered = prev.filter((img) => img.id !== id)
-      return filtered
-    })
+    setImages((prev) => prev.filter((img) => img.id !== id));
   }
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+
+    const newImages = Array.from(files).map((file) => ({
+      id: Date.now() + Math.random().toString(36).substr(2,9),
+      file,
+      url: URL.createObjectURL(file)
+    }));
+
+    setImages((prev) => [...prev, ...newImages]);
+  }
+
+useEffect(() => {
+  const fetchCategories = async () => {
+    try {
+    const data = await getAllCategories();
+    setCategorias(data);
+    } catch (error) {
+    console.error('Error al obtener categorias.', error.message);  
+    }
+  }
+
+  fetchCategories();
+}, []);
+
+
+  
 
   return (
     <div className="text-black flex flex-col w-full h-screen py-3 px-8 font-worksans overflow-hidden">
@@ -129,8 +150,10 @@ export const SubirProducto = () => {
                     </Typography>
                     <Input
                       size="lg"
-                      placeholder="Ej: Zapatillas deportivas premium"
+                      placeholder="Ej: Iphone 13 Pro"
                       className="!border-gray-300 focus:!border-deep-orange-500"
+                      onChange={(e) => setNombre(e.target.value)}
+                      value={nombre}
                       labelProps={{
                         className: "hidden",
                       }}
@@ -148,11 +171,9 @@ export const SubirProducto = () => {
                         className: "p-1",
                       }}
                     >
-                      <Option value="calzado">Calzado</Option>
-                      <Option value="ropa">Ropa</Option>
-                      <Option value="accesorios">Accesorios</Option>
-                      <Option value="electronica">Electrónica</Option>
-                      <Option value="hogar">Hogar</Option>
+                      { categorias.map((cat) => (
+                        <Option key={cat.id} value={cat.id.toString()}>{cat.nombre}</Option>
+                      )) }
                     </Select>
                   </div>
 
@@ -162,8 +183,10 @@ export const SubirProducto = () => {
                     </Typography>
                     <Input
                       size="lg"
-                      placeholder="Ej: Nike, Samsung, etc."
+                      placeholder="Ej: Apple, JBL, etc."
                       className="!border-gray-300 focus:!border-deep-orange-500"
+                      onChange={(e) => setMarca(e.target.value)}
+                      value={marca}
                       labelProps={{
                         className: "hidden",
                       }}
@@ -185,6 +208,8 @@ export const SubirProducto = () => {
                       type="number"
                       size="lg"
                       placeholder="0.00"
+                      onChange={(e) => setPrecio(e.target.value)}
+                      value={precio}
                       className="!border-gray-300 focus:!border-deep-orange-500"
                       icon="$"
                       labelProps={{
@@ -192,7 +217,7 @@ export const SubirProducto = () => {
                       }}
                     />
                   </div>
-                  <div>
+                  {/* <div>
                     <Typography variant="small" color="blue-gray" className="mb-2 font-medium">
                       Precio de oferta
                     </Typography>
@@ -206,7 +231,7 @@ export const SubirProducto = () => {
                         className: "hidden",
                       }}
                     />
-                  </div>
+                  </div> */}
                 </div>
               </div>
 
@@ -219,6 +244,8 @@ export const SubirProducto = () => {
                   size="lg"
                   placeholder="0"
                   className="!border-gray-300 focus:!border-deep-orange-500"
+                  onChange={(e) => setCantidad(e.target.value)}
+                  value={cantidad}
                   labelProps={{
                     className: "hidden",
                   }}
@@ -315,7 +342,13 @@ export const SubirProducto = () => {
                   <Typography variant="h6" color="blue-gray" className="mb-4">
                     Descripción
                   </Typography>
-                  <Textarea label="Descripción del producto" size="lg" className="!border-gray-300 min-h-[120px]" />
+                  <Textarea
+                   label="Descripción del producto"
+                   size="lg"
+                   className="!border-gray-300 min-h-[120px]"
+                   onChange={(e) => setDescripcion(e.target.value)}
+                   value={descripcion} 
+                   />
                 </div>
 
                 <div>
@@ -330,23 +363,23 @@ export const SubirProducto = () => {
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
                           <Chip
-                            variant={estado === "activo" ? "filled" : "outlined"}
-                            value={estado === "activo" ? "Activo" : ""}
-                            onClick={() => setEstado("activo")}
+                            variant={estado === "true" ? "filled" : "outlined"}
+                            value="Activo"
+                            onClick={() => setEstado(true)}
                             color="green"
                             className={`rounded-full cursor-pointer ${
-                              estado === "activo" ? "" : "border-gray-300 text-gray-500"
+                              estado ? "" : "border-gray-300 text-gray-500"
                             }`}
                           />
                         </div>
                         <div className="flex items-center gap-2">
                           <Chip
-                            variant={estado === "inactivo" ? "filled" : "outlined"}
-                            value={estado === "inactivo" ? "Inactivo" : ""}
-                            onClick={() => setEstado("inactivo")}
+                            variant={estado === false ? "filled" : "outlined"}
+                            value="Inactivo"
+                            onClick={() => setEstado(false)}
                             color="red"
                             className={`rounded-full cursor-pointer ${
-                              estado === "inactivo" ? "" : "border-gray-300 text-gray-500"
+                              estado ? "" : "border-gray-300 text-gray-500"
                             }`}
                           />
                         </div>
